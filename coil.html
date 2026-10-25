@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>전류가 흐르는 코일 주위의 자기장 관찰하기 가상실험실</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap');
+    * {
+      font-family: 'Pretendard', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 전선 내 전류 흐름 도트 애니메이션 */
+    .wire-flow-fwd {
+      stroke-dasharray: 9 7;
+      animation: wireFlowFwd 1.1s linear infinite;
+    }
+    .wire-flow-rev {
+      stroke-dasharray: 9 7;
+      animation: wireFlowRev 1.1s linear infinite;
+    }
+    @keyframes wireFlowFwd {
+      from { stroke-dashoffset: 32; }
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes wireFlowRev {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: 32; }
+    }
+
+    /* 전원장치 내 전류 세기 조절 슬라이더 게이지 스타일 */
+    .gauge-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #1e293b;
+      outline: none;
+      border-radius: 6px;
+      border: 1px solid #475569;
+    }
+    .gauge-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #38bdf8;
+      border: 2px solid #ffffff;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+    }
+    .gauge-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #38bdf8;
+      border: 2px solid #ffffff;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+    }
+
+    /* 나침반 바늘 회전 애니메이션 */
+    .compass-needle {
+      transition: transform 0.5s cubic-bezier(0.34, 1.45, 0.64, 1);
+      transform-origin: 0px 0px;
+    }
+
+    /* 기구 인터랙티브 호버/터치 펄스 */
+    .interactive-element {
+      cursor: pointer;
+      transition: filter 0.2s, transform 0.2s;
+    }
+    .interactive-element:hover {
+      filter: drop-shadow(0 0 7px rgba(37, 99, 235, 0.7));
+    }
+    .interactive-element:active {
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between">
+
+  <!-- 헤더 -->
+  <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
+      <div class="flex items-center space-x-3">
+        <span class="bg-blue-600 px-3 py-1 rounded-lg text-sm font-bold tracking-wide border border-blue-400/40">천재 258~259쪽</span>
+        <h1 class="text-base sm:text-lg md:text-xl font-black flex items-center gap-2">
+          <i class="fa-solid fa-compass text-amber-400"></i>
+          전류가 흐르는 코일 주위의 자기장 관찰하기
+        </h1>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="btnReset" class="px-3 py-2 bg-white/10 hover:bg-white/20 active:scale-95 rounded-xl text-sm font-bold transition flex items-center gap-1.5 border border-white/20">
+          <i class="fa-solid fa-rotate-left"></i> 리셋
+        </button>
+        <button id="btnRightHandHelp" class="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 active:scale-95 rounded-xl text-sm font-black transition flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-hand"></i> 오른손 법칙
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 작업 공간 -->
+  <main class="max-w-7xl mx-auto w-full p-2.5 sm:p-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+    
+    <!-- 좌측/중앙: 실제 실험 도구 배치 공간 (8 cols) -->
+    <div class="lg:col-span-8 flex flex-col gap-2.5">
+      
+      <!-- 상단 도구 옵션 바 & 기구 직접 조작 팁 -->
+      <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
+        <div class="flex items-center flex-wrap gap-2">
+          <button id="btnToggleLines" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100 transition flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-circle-nodes"></i> 자기력선 (ON)
+          </button>
+          <button id="btnToggleCurrentVector" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-rose-500 bg-rose-50 text-rose-700 hover:bg-rose-100 transition flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-arrow-up-long"></i> 전류 방향 화살표 (ON)
+          </button>
+        </div>
+        <div class="text-xs sm:text-sm font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl flex items-center gap-2 border border-slate-200">
+          <i class="fa-solid fa-hand-pointer text-blue-600 animate-bounce"></i>
+          <span>화면의 <strong>스위치</strong>, <strong>전원단자</strong>, <strong>다이얼</strong>을 직접 터치하세요!</span>
+        </div>
+      </div>
+
+      <!-- 메인 인터랙티브 SVG 실험 테이블 -->
+      <div class="relative bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 rounded-3xl p-1 sm:p-3 shadow-inner border border-slate-300 overflow-hidden flex items-center justify-center min-h-[490px] sm:min-h-[560px]">
+        
+        <!-- 실시간 상태 안내 배너 -->
+        <div id="statusBanner" class="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-300 shadow text-xs sm:text-sm font-bold flex items-center gap-2.5 z-20">
+          <span class="inline-block w-3 h-3 rounded-full bg-slate-400" id="statusDot"></span>
+          <span id="statusText">스위치가 열려 있습니다 (전류 OFF). 나침반 바늘의 N극은 모두 북쪽(▲)을 가리킵니다.</span>
+        </div>
+
+        <!-- 방위표 (지구 자기장 기준 북쪽 표시) -->
+        <div class="absolute top-3 right-3 bg-white/95 backdrop-blur p-2.5 rounded-2xl border border-slate-200 shadow text-center z-10 pointer-events-none w-16">
+          <div class="text-xs font-black text-red-600">▲ 북(N)</div>
+          <div class="w-6 h-6 mx-auto relative my-1">
+            <div class="w-0.5 h-6 bg-slate-400 mx-auto"></div>
+            <div class="h-0.5 w-6 bg-slate-400 absolute top-[11px] left-0"></div>
+            <div class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[9px] border-b-red-600 absolute top-0 left-[8px]"></div>
+          </div>
+          <div class="text-[10px] text-slate-500 flex justify-between px-0.5"><span>서</span><span>동</span></div>
+          <div class="text-[11px] text-slate-700 font-bold">남(S)</div>
+        </div>
+
+        <!-- SVG 실험 테이블 그래픽 -->
+        <svg id="labSvg" class="w-full h-full max-w-[850px] aspect-[4/3]" viewBox="0 0 850 640">
+          <defs>
+            <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+              <feDropShadow dx="3" dy="5" stdDeviation="4" flood-opacity="0.25"/>
+            </filter>
+            <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <!-- 구리선 색상 그라디언트 -->
+            <linearGradient id="copperGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#9a3412" />
+              <stop offset="35%" stop-color="#f59e0b" />
+              <stop offset="70%" stop-color="#b45309" />
+              <stop offset="100%" stop-color="#78350f" />
+            </linearGradient>
+            <!-- 전원장치 그라디언트 -->
+            <linearGradient id="powerBoxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#334155" />
+              <stop offset="60%" stop-color="#1e293b" />
+              <stop offset="100%" stop-color="#0f172a" />
+            </linearGradient>
+            <!-- 화살표 마커 -->
+            <marker id="redArrow" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#ef4444" />
+            </marker>
+          </defs>
+
+          <!-- 바닥 테이블 그림자 -->
+          <ellipse cx="425" cy="590" rx="390" ry="35" fill="#94a3b8" opacity="0.3" filter="url(#dropShadow)" />
+
+          <!-- ========================================================
+               1. 좌측 하단: 투명 사각 아크릴판 및 중앙 원형 코일 + 8개 나침반
+               ======================================================== -->
+          <g id="acrylicPlateGroup" transform="translate(60, 280)">
+            <!-- 아크릴판 그림자 및 판 본체 -->
+            <rect x="0" y="0" width="460" height="280" rx="16" fill="#64748b" opacity="0.2" transform="translate(6, 8)" />
+            <rect x="0" y="0" width="460" height="280" rx="16" fill="#ffffff" fill-opacity="0.75" stroke="#94a3b8" stroke-width="2.5" />
+            <rect x="6" y="6" width="448" height="268" rx="12" fill="none" stroke="#f8fafc" stroke-width="2" />
+            
+            <!-- 4개 모서리 고정 나사발 -->
+            <circle cx="28" cy="28" r="10" fill="#cbd5e1" stroke="#64748b" stroke-width="2" />
+            <circle cx="28" cy="28" r="4" fill="#475569" />
+            <circle cx="432" cy="28" r="10" fill="#cbd5e1" stroke="#64748b" stroke-width="2" />
+            <circle cx="432" cy="28" r="4" fill="#475569" />
+            <circle cx="28" cy="252" r="10" fill="#cbd5e1" stroke="#64748b" stroke-width="2" />
+            <circle cx="28" cy="252" r="4" fill="#475569" />
+            <circle cx="432" cy="252" r="10" fill="#cbd5e1" stroke="#64748b" stroke-width="2" />
+            <circle cx="432" cy="252" r="4" fill="#475569" />
+
+            <text x="32" y="270" font-size="11" font-weight="bold" fill="#64748b">투명 코일 실험판</text>
+
+            <!-- 중앙 수직 권선 코일 (x=230, 세로 통과) -->
+            <ellipse cx="230" cy="55" rx="8" ry="4" fill="#334155" />
+            <ellipse cx="230" cy="225" rx="8" ry="4" fill="#334155" />
+
+            <!-- 코일 뒤쪽 통과선 -->
+            <path d="M 230 55 C 220 100, 220 180, 230 225" fill="none" stroke="#78350f" stroke-width="10" opacity="0.4" />
+
+            <!-- 코일 앞면 도선 (에나멜 구리선 느낌) -->
+            <path d="M 230 55 C 242 100, 242 180, 230 225" fill="none" stroke="url(#copperGrad)" stroke-width="13" stroke-linecap="round" filter="url(#dropShadow)" />
+            <path d="M 228 55 C 240 100, 240 180, 228 225" fill="none" stroke="#fef08a" stroke-width="2" opacity="0.8" />
+            <path d="M 232 55 C 244 100, 244 180, 232 225" fill="none" stroke="#451a03" stroke-width="1.8" opacity="0.6" />
+
+            <!-- 코일 상단 인출선 (니크롬선으로 연결되는 리드선) -->
+            <path d="M 230 55 L 210 20 L 160 5" fill="none" stroke="#d97706" stroke-width="2.5" />
+            <!-- 코일 하단 인출선 (스위치로 연결되는 리드선) -->
+            <path d="M 230 225 L 250 255 L 300 278" fill="none" stroke="#d97706" stroke-width="2.5" />
+
+            <!-- 코일 전류 방향 표시 화살표 레이어 -->
+            <g id="coilCurrentIndicator" class="hidden">
+              <path id="coilCurrentArrowLine" d="M 252 180 L 252 100" stroke="#ef4444" stroke-width="6" marker-end="url(#redArrow)" stroke-linecap="round" />
+              <text id="coilCurrentText" x="264" y="145" font-size="16" font-weight="900" fill="#ef4444">전류 ↑</text>
+            </g>
+
+            <text x="205" y="145" font-size="15" font-weight="900" fill="#1e293b" text-anchor="end">코일</text>
+
+            <!-- ----------------------------------------------------
+                 자기력선 시각화 레이어 (코일 중심 x=230, y=140 기준)
+                 ---------------------------------------------------- -->
+            <g id="magneticFieldLinesPlate" opacity="0.9" class="pointer-events-none">
+              <!-- 정방향 (앞면 위로 ↑): 코일 왼쪽이 N극, 오른쪽이 S극 -->
+              <g id="plateFieldNormal" class="hidden">
+                <!-- 큰 외부 곡선 루프선 -->
+                <path d="M 230 140 C 130 140, 30 120, 15 70 C -5 10, 90 -35, 230 -35 C 370 -35, 465 10, 445 70 C 430 120, 330 140, 230 140" fill="none" stroke="#2563eb" stroke-width="2.6" stroke-dasharray="7 4" />
+                <path d="M 230 140 C 130 140, 30 160, 15 210 C -5 270, 90 315, 230 315 C 370 315, 465 270, 445 210 C 430 160, 330 140, 230 140" fill="none" stroke="#2563eb" stroke-width="2.6" stroke-dasharray="7 4" />
+                <!-- 내부 중심통과 축선 -->
+                <line x1="15" y1="140" x2="445" y2="140" stroke="#1d4ed8" stroke-width="3" stroke-dasharray="7 4" />
+                <!-- 방향 화살표들 -->
+                <polygon points="120,134 105,140 120,146" fill="#1d4ed8" />
+                <polygon points="215,134 200,140 215,146" fill="#1d4ed8" />
+                <polygon points="350,134 335,140 350,146" fill="#1d4ed8" />
+                <polygon points="220,-39 238,-35 220,-31" fill="#2563eb" />
+                <polygon points="220,311 238,315 220,319" fill="#2563eb" />
+                <!-- 자극 레이블 -->
+                <g transform="translate(165, 126)">
+                  <rect x="0" y="0" width="28" height="28" rx="6" fill="#ef4444" stroke="#b91c1c" stroke-width="1.5" />
+                  <text x="14" y="20" font-size="16" font-weight="900" fill="white" text-anchor="middle">N</text>
+                </g>
+                <g transform="translate(268, 126)">
+                  <rect x="0" y="0" width="28" height="28" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="1.5" />
+                  <text x="14" y="20" font-size="16" font-weight="900" fill="white" text-anchor="middle">S</text>
+                </g>
+              </g>
+
+              <!-- 역방향 (앞면 아래로 ↓): 코일 오른쪽이 N극, 왼쪽이 S극 -->
+              <g id="plateFieldReverse" class="hidden">
+                <path d="M 230 140 C 330 140, 430 120, 445 70 C 465 10, 370 -35, 230 -35 C 90 -35, -5 10, 15 70 C 30 120, 130 140, 230 140" fill="none" stroke="#dc2626" stroke-width="2.6" stroke-dasharray="7 4" />
+                <path d="M 230 140 C 330 140, 430 160, 445 210 C 465 270, 370 315, 230 315 C 90 315, -5 270, 15 210 C 30 160, 130 140, 230 140" fill="none" stroke="#dc2626" stroke-width="2.6" stroke-dasharray="7 4" />
+                <line x1="445" y1="140" x2="15" y2="140" stroke="#b91c1c" stroke-width="3" stroke-dasharray="7 4" />
+                <!-- 방향 화살표들 -->
+                <polygon points="340,134 355,140 340,146" fill="#b91c1c" />
+                <polygon points="245,134 260,140 245,146" fill="#b91c1c" />
+                <polygon points="110,134 125,140 110,146" fill="#b91c1c" />
+                <polygon points="240,-39 222,-35 240,-31" fill="#dc2626" />
+                <polygon points="240,311 222,315 240,319" fill="#dc2626" />
+                <!-- 자극 레이블 -->
+                <g transform="translate(165, 126)">
+                  <rect x="0" y="0" width="28" height="28" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="1.5" />
+                  <text x="14" y="20" font-size="16" font-weight="900" fill="white" text-anchor="middle">S</text>
+                </g>
+                <g transform="translate(268, 126)">
+                  <rect x="0" y="0" width="28" height="28" rx="6" fill="#ef4444" stroke="#b91c1c" stroke-width="1.5" />
+                  <text x="14" y="20" font-size="16" font-weight="900" fill="white" text-anchor="middle">N</text>
+                </g>
+              </g>
+            </g>
+
+            <!-- ----------------------------------------------------
+                 나침반 8개 (교과서 259쪽 그림과 동일한 정렬)
+                 ---------------------------------------------------- -->
+            <g id="compassGroup">
+              <!-- 1. 위쪽(상) x=230, y=45 -->
+              <g class="compass-item cursor-pointer" data-id="1" data-name="① 위쪽" transform="translate(230, 45)">
+                <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#dropShadow)" />
+                <circle cx="0" cy="0" r="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+                <circle cx="0" cy="0" r="25" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2 2" />
+                <text x="0" y="-17" font-size="8" font-weight="black" fill="#ef4444" text-anchor="middle">N</text>
+                <text x="0" y="22" font-size="7" font-weight="bold" fill="#64748b" text-anchor="middle">S</text>
+                <!-- 나침반 바늘: 상시 표시됨 (rot=0deg는 북쪽) -->
+                <g id="needle-1" class="compass-needle" style="transform: rotate(0deg);">
+                  <polygon points="0,-23 5,0 -5,0" fill="#ef4444" stroke="#b91c1c" stroke-width="0.6" />
+                  <polygon points="0,23 5,0 -5,0" fill="#cbd5e1" stroke="#64748b" stroke-width="0.6" />
+                  <circle cx="0" cy="0" r="3.2" fill="#0f172a" />
+                  <circle cx="0" cy="0" r="1.2" fill="#f8fafc" />
+                </g>
+              </g>
+
+              <!-- 2. 오른쪽 위 x=325, y=65 -->
+              <g class="compass-item cursor-pointer" data-id="2" data-name="② 오른쪽 위" transform="translate(325, 65)">
+                <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#dropShadow)" />
+                <circle cx="0" cy="0" r="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+                <circle cx="0" cy="0" r="25" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2 2" />
+                <text x="0" y="-17" font-size="8" font-weight="black" fill="#ef4444" text-anchor="middle">N</text>
+                <text x="0" y="22" font-size="7" font-weight="bold" fill="#64748b" text-anchor="middle">S</text>
+                <g id="needle-2" class="compass-needle" style="transform: rotate(0deg);">
+                  <polygon points="0,-23 5,0 -5,0" fill="#ef4444" stroke="#b91c1c" stroke-width="0.6" />
+                  <polygon points="0,23 5,0 -5,0" fill="#cbd5e1" stroke="#64748b" stroke-width="0.6" />
+                  <circle cx="0" cy="0" r="3.2" fill="#0f172a" />
+                  <circle cx="0" cy="0" r="1.2" fill="#f8fafc" />
+                </g>
+              </g>
+
+              <!-- 3. 오른쪽 x=375, y=140 -->
+              <g class="compass-item cursor-pointer" data-id="3" data-name="③ 오른쪽" transform="translate(375, 140)">
+                <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#dropShadow)" />
+                <circle cx="0" cy="0" r="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+                <circle cx="0" cy="0" r="25" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2 2" />
+                <text x="0" y="-17" font-size="8" font-weight="black" fill="#ef4444" text-anchor="middle">N</text>
+                <text x="0" y="22" font-size="7" font-weight="bold" fill="#64748b" text-anchor="middle">S</text>
+                <g id="needle-3" class="compass-needle" style="transform: rotate(0deg);">
+                  <polygon points="0,-23 5,0 -5,0" fill="#ef4444" stroke="#b91c1c" stroke-width="0.6" />
+                  <polygon points="0,23 5,0 -5,0" fill="#cbd5e1" stroke="#64748b" stroke-width="0.6" />
+                  <circle cx="0" cy="0" r="3.2" fill="#0f172a" />
+                  <circle cx="0" cy="0" r="1.2" fill="#f8fafc" />
+                </g>
+              </g>
+
+              <!-- 4. 오른쪽 아래 x=325, y=215 -->
+              <g class="compass-item cursor-pointer" data-id="4" data-name="④ 오른쪽 아래" transform="translate(325, 215)">
+                <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#dropShadow)" />
+                <circle cx="0" cy="0" r="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+                <circle cx="0" cy="0" r="25" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2 2" />
+                <text x="0" y="-17" font-size="8" font-weight="black" fill="#ef4444" text-anchor="middle">N</text>
+                <text x="0" y="22" font-size="7" font-weight="bold" fill="#64748b" text-anchor="middle">S</text>
+                <g id="needle-4" class="compass-needle" style="transform: rotate(0deg);">
+                  <polygon points="0,-23 5,0 -5,0" fill="#ef4444" stroke="#b91c1c" stroke-width="0.6" />
+                  <polygon points="0,23 5,0 -5,0" fill="#cbd5e1" stroke="#64748b" stroke-width="0.6" />
+                  <circle cx="0" cy="0" r="3.2" fill="#0f172a" />
+                  <circle cx="0" cy="0" r="1.2" fill="#f8fafc" />
+                </g>
+              </g>
+
+              <!-- 5. 아래쪽(하) x=230, y=235 -->
+              <g class="compass-item cursor-pointer" data-id="5" data-name="⑤ 아래쪽" transform="translate(230, 235)">
+                <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#dropShadow)" />
+                <circle cx="0" cy="0" r="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+                <circle cx="0" cy="0" r="25" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2 2" />
+                <text x="0" y="-17" font-size="8" font-weight="black" fill="#ef4444" text-anchor="middle">N</text>
+                <text x="0" y="22" font-size="7" font-weight="bold" fill="#64748b" text-anchor="middle">S</text>
+                <g id="needle-5" class="compass-needle" style="transform: rotate(0deg);">
+                  <polygon points="0,-23 5,0 -5,0" fill="#ef4444" stroke="#b91c1c" stroke-width="0.6" />
+                  <polygon points="0,23 5,0 -5,0" fill="#cbd5e1" stroke="#64748b" stroke-width="0.6" />
+                  <circle cx="0" cy="0" r="3.2" fill="#0f172a" />
+                  <circle cx="0" cy="0" r="1.2" fill="#f8fafc" />
+                </g>
+              </g>
+
+              <!-- 6. 왼쪽 아래 x=135, y=215 -->
+              <g class="compass-item cursor-pointer" data-id="6" data-name="⑥ 왼쪽 아래" transform="translate(135, 215)">
+                <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#dropShadow)" />
+                <circle cx="0" cy="0" r="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+                <circle cx="0" cy="0" r="25" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2 2" />
+                <text x="0" y="-17" font-size="8" font-weight="black" fill="#ef4444" text-anchor="middle">N</text>
+                <text x="0" y="22" font-size="7" font-weight="bold" fill="#64748b" text-anchor="middle">S</text>
+                <g id="needle-6" class="compass-needle" style="transform: rotate(0deg);">
+                  <polygon points="0,-23 5,0 -5,0" fill="#ef4444" stroke="#b91c1c" stroke-width="0.6" />
+                  <polygon points="0,23 5,0 -5,0" fill="#cbd5e1" stroke="#64748b" stroke-width="0.6" />
+                  <circle cx="0" cy="0" r="3.2" fill="#0f172a" />
+                  <circle cx="0" cy="0" r="1.2" fill="#f8fafc" />
+                </g>
+              </g>
+
+              <!-- 7. 왼쪽 x=85, y=140 -->
+              <g class="compass-item cursor-pointer" data-id="7" data-name="⑦ 왼쪽" transform="translate(85, 140)">
+                <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#dropShadow)" />
+                <circle cx="0" cy="0" r="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+                <circle cx="0" cy="0" r="25" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2 2" />
+                <text x="0" y="-17" font-size="8" font-weight="black" fill="#ef4444" text-anchor="middle">N</text>
+                <text x="0" y="22" font-size="7" font-weight="bold" fill="#64748b" text-anchor="middle">S</text>
+                <g id="needle-7" class="compass-needle" style="transform: rotate(0deg);">
+                  <polygon points="0,-23 5,0 -5,0" fill="#ef4444" stroke="#b91c1c" stroke-width="0.6" />
+                  <polygon points="0,23 5,0 -5,0" fill="#cbd5e1" stroke="#64748b" stroke-width="0.6" />
+                  <circle cx="0" cy="0" r="3.2" fill="#0f172a" />
+                  <circle cx="0" cy="0" r="1.2" fill="#f8fafc" />
+                </g>
+              </g>
+
+              <!-- 8. 왼쪽 위 x=135, y=65 -->
+              <g class="compass-item cursor-pointer" data-id="8" data-name="⑧ 왼쪽 위" transform="translate(135, 65)">
+                <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#dropShadow)" />
+                <circle cx="0" cy="0" r="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+                <circle cx="0" cy="0" r="25" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2 2" />
+                <text x="0" y="-17" font-size="8" font-weight="black" fill="#ef4444" text-anchor="middle">N</text>
+                <text x="0" y="22" font-size="7" font-weight="bold" fill="#64748b" text-anchor="middle">S</text>
+                <g id="needle-8" class="compass-needle" style="transform: rotate(0deg);">
+                  <polygon points="0,-23 5,0 -5,0" fill="#ef4444" stroke="#b91c1c" stroke-width="0.6" />
+                  <polygon points="0,23 5,0 -5,0" fill="#cbd5e1" stroke="#64748b" stroke-width="0.6" />
+                  <circle cx="0" cy="0" r="3.2" fill="#0f172a" />
+                  <circle cx="0" cy="0" r="1.2" fill="#f8fafc" />
+                </g>
+              </g>
+            </g>
+          </g>
+
+          <!-- ========================================================
+               2. 좌측 상단: 니크롬선 모듈
+               ======================================================== -->
+          <g id="nichromeModule" transform="translate(130, 95)" filter="url(#dropShadow)">
+            <rect x="0" y="0" width="230" height="48" rx="24" fill="#ec4899" stroke="#be185d" stroke-width="2" />
+            <rect x="6" y="5" width="218" height="38" rx="19" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+            
+            <rect x="55" y="15" width="120" height="18" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1" />
+            <path d="M 60 17 L 60 31 M 66 17 L 66 31 M 72 17 L 72 31 M 78 17 L 78 31 M 84 17 L 84 31 M 90 17 L 90 31 M 96 17 L 96 31 M 102 17 L 102 31 M 108 17 L 108 31 M 114 17 L 114 31 M 120 17 L 120 31 M 126 17 L 126 31 M 132 17 L 132 31 M 138 17 L 138 31 M 144 17 L 144 31 M 150 17 L 150 31 M 156 17 L 156 31 M 162 17 L 162 31 M 168 17 L 168 31" stroke="#475569" stroke-width="2" />
+            
+            <circle cx="28" cy="24" r="16" fill="#38bdf8" stroke="#0284c7" stroke-width="2" />
+            <circle cx="28" cy="24" r="6" fill="#0369a1" />
+
+            <circle cx="202" cy="24" r="16" fill="#38bdf8" stroke="#0284c7" stroke-width="2" />
+            <circle cx="202" cy="24" r="6" fill="#0369a1" />
+
+            <text x="115" y="42" font-size="12" font-weight="900" fill="#334155" text-anchor="middle">니크롬선</text>
+          </g>
+
+          <!-- ========================================================
+               3. 우측 상단: 디지털 전원 장치 (게이지 슬라이더 내장 & 단자 터치)
+               ======================================================== -->
+          <g id="powerSupplyModule" transform="translate(500, 15)" filter="url(#dropShadow)">
+            <rect x="0" y="0" width="225" height="205" rx="12" fill="url(#powerBoxGrad)" stroke="#475569" stroke-width="2.5" />
+            <rect x="7" y="7" width="211" height="191" rx="9" fill="none" stroke="#334155" stroke-width="1.5" />
+            
+            <text x="112" y="27" font-size="14" font-weight="900" fill="#f8fafc" text-anchor="middle" letter-spacing="1">디지털 전원 장치</text>
+            
+            <!-- LED 7-세그먼트 디스플레이 창 -->
+            <rect x="16" y="36" width="105" height="66" rx="5" fill="#000000" stroke="#1e293b" stroke-width="2" />
+            <text x="24" y="62" font-size="10" fill="#ef4444" font-weight="bold">V</text>
+            <text id="lcdVoltText" x="72" y="63" font-size="22" font-family="monospace" font-weight="black" fill="#ef4444" text-anchor="middle">01.0</text>
+            <text x="108" y="62" font-size="10" fill="#ef4444" font-weight="bold">V</text>
+
+            <text x="24" y="90" font-size="10" fill="#ef4444" font-weight="bold">A</text>
+            <text id="lcdAmpText" x="72" y="91" font-size="21" font-family="monospace" font-weight="black" fill="#ef4444" text-anchor="middle">0.25</text>
+            <text x="108" y="90" font-size="10" fill="#ef4444" font-weight="bold">A</text>
+
+            <!-- 전류 세기 게이지 (슬라이더 컨트롤) -->
+            <g transform="translate(132, 36)">
+              <rect x="0" y="0" width="80" height="70" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1.2" />
+              <text x="40" y="17" font-size="10" font-weight="black" fill="#38bdf8" text-anchor="middle">전류 세기</text>
+              <text id="gaugeValueText" x="40" y="33" font-size="11" font-weight="black" fill="#f8fafc" text-anchor="middle">1.0 V</text>
+              
+              <!-- 외장형 HTML 슬라이더 매핑 (foreignObject) -->
+              <foreignObject x="6" y="38" width="68" height="26">
+                <div xmlns="http://www.w3.org/1999/xhtml" class="w-full h-full flex items-center justify-center">
+                  <input id="powerGaugeSlider" type="range" min="1.0" max="6.0" step="0.5" value="1.0" class="gauge-slider w-full h-2.5 cursor-pointer" title="드래그하여 전류 세기(전압) 조절" />
+                </div>
+              </foreignObject>
+            </g>
+
+            <!-- 직접 클릭하여 전류 방향을 바꾸는 인터랙티브 단자 그룹 -->
+            <g id="terminalsClickG" class="interactive-element" title="단자를 클릭하여 전류의 방향 변경">
+              <!-- 좌측 단자 -->
+              <g id="termLeft" transform="translate(75, 152)">
+                <rect id="termLeftBox" x="-14" y="-12" width="28" height="28" rx="5" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+                <circle id="termLeftCircle" cx="0" cy="2" r="9" fill="#0f172a" stroke="#64748b" stroke-width="2" />
+                <text id="signLeft" x="0" y="19" font-size="14" font-weight="900" fill="#cbd5e1" text-anchor="middle">-</text>
+              </g>
+              <!-- 우측 단자 -->
+              <g id="termRight" transform="translate(135, 152)">
+                <rect id="termRightBox" x="-14" y="-12" width="28" height="28" rx="5" fill="#991b1b" stroke="#ef4444" stroke-width="1.5" />
+                <circle id="termRightCircle" cx="0" cy="2" r="9" fill="#dc2626" stroke="#fca5a5" stroke-width="2" />
+                <text id="signRight" x="0" y="19" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle">+</text>
+              </g>
+              <rect x="50" y="132" width="115" height="50" fill="transparent" />
+            </g>
+
+            <text x="112" y="193" font-size="11" font-weight="bold" fill="#94a3b8" text-anchor="middle">
+              <tspan fill="#38bdf8" font-weight="900">단자 터치:</tspan> 전류의 방향 변경 ⇄
+            </text>
+          </g>
+
+          <!-- ========================================================
+               4. 우측 하단: 나이프 스위치 (직접 클릭/터치로 개폐)
+               ======================================================== -->
+          <g id="knifeSwitchModule" transform="translate(680, 310)" filter="url(#dropShadow)">
+            <rect x="0" y="0" width="110" height="195" rx="16" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2.5" />
+            
+            <!-- 상단/하단 하늘색 원형 단자 -->
+            <circle cx="85" cy="40" r="17" fill="#38bdf8" stroke="#0284c7" stroke-width="2" />
+            <circle cx="85" cy="40" r="7" fill="#0369a1" />
+
+            <circle cx="85" cy="155" r="17" fill="#38bdf8" stroke="#0284c7" stroke-width="2" />
+            <circle cx="85" cy="155" r="7" fill="#0369a1" />
+
+            <!-- 금속 클립 접점 -->
+            <rect x="42" y="31" width="18" height="18" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1.2" />
+            <rect x="42" y="146" width="18" height="18" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1.2" />
+
+            <!-- 직접 클릭하는 스위치 칼날 레버 (회전축 cx=51, cy=155) -->
+            <g id="switchClickG" class="interactive-element" title="클릭하여 스위치 닫기/열기">
+              <g id="switchBlade" transform="rotate(-35, 51, 155)" class="transition-transform duration-300">
+                <rect x="47" y="34" width="8" height="122" rx="2" fill="#b45309" stroke="#78350f" stroke-width="1.2" />
+                <circle cx="51" cy="30" r="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2.2" />
+              </g>
+              <!-- 넓은 터치 영역 -->
+              <rect x="5" y="5" width="100" height="185" fill="transparent" />
+            </g>
+
+            <text x="35" y="105" font-size="13" font-weight="900" fill="#1e293b" text-anchor="middle">스위치</text>
+            <text x="35" y="122" font-size="10" font-weight="bold" fill="#2563eb" text-anchor="middle">(터치)</text>
+          </g>
+
+          <!-- ========================================================
+               5. 파란색 집게 전선 배선 (한 방향 폐회로 일치)
+               ======================================================== -->
+          <g id="wiresLayer" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <!-- 1) 전원장치 우측단자(x=635, y=160) -> 스위치 상단단자(x=765, y=350) [전원(+) -> 스위치] -->
+            <path id="wirePath3" d="M 635 160 C 695 180, 755 240, 765 350" stroke="#0284c7" stroke-width="7" />
+            <path d="M 635 160 C 695 180, 755 240, 765 350" stroke="#38bdf8" stroke-width="2.5" opacity="0.6" />
+
+            <!-- 2) 스위치 하단단자(x=765, y=465) -> 코일 하단 인출선(x=360, y=560) [스위치 -> 코일하단] -->
+            <path id="wirePath4" d="M 765 465 C 765 595, 480 610, 360 560" stroke="#0284c7" stroke-width="7" />
+            <path d="M 765 465 C 765 595, 480 610, 360 560" stroke="#38bdf8" stroke-width="2.5" opacity="0.6" />
+            <rect x="350" y="552" width="22" height="12" rx="3" fill="#1d4ed8" stroke="#1e40af" stroke-width="1.5" transform="rotate(-25, 361, 558)" />
+
+            <!-- 3) 코일 상단 인출선(x=220, y=285) -> 니크롬선 좌측단자(x=158, y=119) [코일상단 -> 니크롬선] -->
+            <path id="wirePath2" d="M 220 285 C 60 250, 75 119, 158 119" stroke="#0284c7" stroke-width="7" />
+            <path d="M 220 285 C 60 250, 75 119, 158 119" stroke="#38bdf8" stroke-width="2.5" opacity="0.6" />
+            <rect x="210" y="278" width="18" height="12" rx="3" fill="#1d4ed8" stroke="#1e40af" stroke-width="1.5" transform="rotate(-15, 219, 284)" />
+
+            <!-- 4) 니크롬선 우측단자(x=332, y=119) -> 전원장치 좌측단자(x=575, y=160) [니크롬선 -> 전원(-)] -->
+            <path id="wirePath1" d="M 332 119 C 410 120, 490 190, 575 160" stroke="#0284c7" stroke-width="7" />
+            <path d="M 332 119 C 410 120, 490 190, 575 160" stroke="#38bdf8" stroke-width="2.5" opacity="0.6" />
+
+            <!-- 하나의 연속된 폐회로를 따라 순환하는 전류 흐름 애니메이션 도트 선 -->
+            <!-- fwd (정방향: 우측(+) -> 스위치 -> 코일하단 -> 코일상단 -> 니크롬선 -> 좌측(-)) -->
+            <path id="dashWire3" d="M 635 160 C 695 180, 755 240, 765 350" stroke="#fef08a" stroke-width="4.5" opacity="0" />
+            <path id="dashWire4" d="M 765 465 C 765 595, 480 610, 360 560" stroke="#fef08a" stroke-width="4.5" opacity="0" />
+            <path id="dashWire2" d="M 220 285 C 60 250, 75 119, 158 119" stroke="#fef08a" stroke-width="4.5" opacity="0" />
+            <path id="dashWire1" d="M 332 119 C 410 120, 490 190, 575 160" stroke="#fef08a" stroke-width="4.5" opacity="0" />
+          </g>
+
+        </svg>
+
+        <!-- 나침반 확대경 팝업 -->
+        <div id="compassDetailModal" class="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-blue-200 hidden z-30 w-56 text-center animate-in fade-in duration-150">
+          <div class="flex justify-between items-center mb-1">
+            <span id="detailCompassName" class="text-sm font-bold text-blue-700">나침반 확대경</span>
+            <button id="btnCloseDetail" class="text-slate-400 hover:text-slate-700 text-lg font-bold p-1">&times;</button>
+          </div>
+          <div class="w-24 h-24 mx-auto relative my-2">
+            <div class="w-full h-full rounded-full border-4 border-slate-700 bg-slate-50 flex items-center justify-center relative shadow-inner">
+              <span class="absolute top-1 text-xs font-black text-red-600">N</span>
+              <div id="detailNeedle" class="compass-needle w-2 h-20 relative" style="transform: rotate(0deg);">
+                <div class="w-full h-1/2 bg-red-600 rounded-t-full"></div>
+                <div class="w-full h-1/2 bg-slate-400 rounded-b-full"></div>
+              </div>
+            </div>
+          </div>
+          <p id="detailDesc" class="text-xs sm:text-sm text-slate-800 font-bold">N극 방향: 북쪽 (0°)</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 우측: 활동 1~4 탐구과정 질문 (답안 미표시, 학생들이 스스로 관찰하여 교과서 작성) -->
+    <div class="lg:col-span-4 flex flex-col gap-2.5">
+      
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col flex-1">
+        
+        <!-- 패널 헤더 -->
+        <div class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-3.5 flex items-center justify-between">
+          <h2 class="text-base sm:text-lg font-black flex items-center gap-2">
+            <i class="fa-solid fa-pencil text-amber-300"></i>
+            탐구 활동 1~4 안내
+          </h2>
+          <span class="text-xs bg-white/20 px-2.5 py-1 rounded-full font-bold">학생 관찰용</span>
+        </div>
+
+        <!-- 탐구 내용 (답안 미제공, 질문 및 관찰 포인트만 제시) -->
+        <div class="p-3.5 sm:p-4 overflow-y-auto space-y-4 flex-1 text-slate-700 leading-relaxed max-h-[640px]">
+          
+          <!-- 활동 1 안내 -->
+          <div class="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/80 shadow-xs">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs sm:text-sm font-black px-2.5 py-0.5 bg-blue-600 text-white rounded-md">활동 1</span>
+              <span class="text-xs font-bold text-slate-500">회로 연결 및 나침반 배치</span>
+            </div>
+            <p class="text-sm sm:text-base font-bold text-slate-800 mt-1">
+              Q1. 스위치가 열려 있을 때 코일 주위 8개 나침반 바늘의 N극(빨간색)은 각각 어느 방향을 가리키나요?
+            </p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+              👉 지구 자기장의 영향으로 나침반 바늘들이 처음 놓인 방향을 교과서 258쪽에 기록해 봅시다.
+            </p>
+          </div>
+
+          <!-- 활동 2 안내 -->
+          <div class="border border-slate-200 rounded-2xl p-3.5 bg-indigo-50/60 shadow-xs">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs sm:text-sm font-black px-2.5 py-0.5 bg-indigo-600 text-white rounded-md">활동 2</span>
+              <span class="text-xs font-bold text-slate-500">스위치 닫기 (전류 ON)</span>
+            </div>
+            <p class="text-sm sm:text-base font-bold text-slate-800 mt-1">
+              Q2. 전원 장치를 켜고 스위치를 닫았을 때, 코일 주위 나침반 바늘의 N극이 가리키는 방향을 교과서 259쪽 그림에 화살표로 그려 봅시다.
+            </p>
+            <p class="text-xs sm:text-sm text-indigo-700 font-semibold mt-1">
+              👉 코일의 중심 안쪽과 코일 바깥쪽(상, 하, 좌, 우)에서 나침반 N극이 향하는 모양을 꼼꼼히 관찰하세요.
+            </p>
+          </div>
+
+          <!-- 활동 3 안내 -->
+          <div class="border border-slate-200 rounded-2xl p-3.5 bg-amber-50/60 shadow-xs">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs sm:text-sm font-black px-2.5 py-0.5 bg-amber-600 text-white rounded-md">활동 3</span>
+              <span class="text-xs font-bold text-slate-500">전류의 방향 반전</span>
+            </div>
+            <p class="text-sm sm:text-base font-bold text-slate-800 mt-1">
+              Q3. 전원 장치의 단자를 터치하여 전류의 방향을 바꾼 뒤, 나침반 바늘의 방향이 어떻게 변하는지 관찰하고 교과서 259쪽 그림에 표시해 봅시다.
+            </p>
+            <p class="text-xs sm:text-sm text-amber-800 font-semibold mt-1">
+              👉 과정 2의 결과와 비교하여 각 나침반 바늘이 몇 도 회전했는지 확인해 보세요.
+            </p>
+          </div>
+
+          <!-- 활동 4 안내 -->
+          <div class="border border-slate-200 rounded-2xl p-3.5 bg-purple-50/60 shadow-xs">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs sm:text-sm font-black px-2.5 py-0.5 bg-purple-600 text-white rounded-md">활동 4</span>
+              <span class="text-xs font-bold text-slate-500">전류의 세기 조절</span>
+            </div>
+            <p class="text-sm sm:text-base font-bold text-slate-800 mt-1">
+              Q4. 전압 다이얼(슬라이더)을 1.0V에서 점차 높여 전류의 세기를 세게 했을 때, 나침반 바늘의 움직임에 어떤 차이가 있나요?
+            </p>
+            <p class="text-xs sm:text-sm text-purple-800 font-semibold mt-1">
+              👉 전압을 올릴 때 나침반 바늘이 정렬되는 힘과 움직임의 정도를 관찰하고 교과서에 서술해 봅시다.
+            </p>
+          </div>
+
+          <!-- 관찰 팁 박스 -->
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs sm:text-sm text-blue-900 flex items-start gap-2">
+            <i class="fa-solid fa-lightbulb text-amber-500 text-base mt-0.5"></i>
+            <div>
+              <strong>실험 도움말:</strong> 
+              상단의 <strong>[자기력선]</strong> 버튼을 누르면 코일 주위에 형성되는 자기장의 전체 모습을 선으로 비교해 볼 수 있습니다.
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 오른손 법칙 모달 팝업 -->
+  <div id="modalRightHand" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 relative animate-in fade-in duration-200">
+      <button id="btnCloseModal" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg">&times;</button>
+      
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-hand"></i>
+        </div>
+        <div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">오른손 법칙 (앙페르의 법칙)</h3>
+          <p class="text-xs sm:text-sm text-slate-500">코일에 흐르는 전류와 자기장의 방향</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200 flex flex-col items-center justify-center my-3">
+        <svg viewBox="0 0 280 140" class="w-full max-w-xs h-32">
+          <ellipse cx="140" cy="70" rx="30" ry="52" fill="none" stroke="#d97706" stroke-width="8" />
+          <path d="M 130 95 C 115 85, 105 60, 125 45 C 130 40, 140 40, 145 50 L 145 68 C 145 68, 158 60, 166 68 C 170 72, 166 82, 158 86 L 138 102 Z" fill="#fde68a" stroke="#d97706" stroke-width="2" />
+          <path d="M 125 55 L 65 55" stroke="#ef4444" stroke-width="5" marker-end="url(#redArrow)" />
+          <text x="65" y="45" font-size="12" font-weight="900" fill="#ef4444">N극 방향 (엄지손가락)</text>
+          <path d="M 148 100 C 160 100, 170 88, 165 72" fill="none" stroke="#2563eb" stroke-width="3" stroke-dasharray="3 3" />
+          <text x="170" y="115" font-size="11" font-weight="900" fill="#2563eb">전류 방향 (네 손가락)</text>
+        </svg>
+      </div>
+
+      <div class="space-y-2.5 text-xs sm:text-sm text-slate-700 bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200">
+        <div class="flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex-shrink-0 flex items-center justify-center text-xs font-black">1</span>
+          <span><strong>오른손의 네 손가락:</strong> 코일에 흐르는 <strong>전류의 방향</strong>으로 감아쥡니다.</span>
+        </div>
+        <div class="flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-red-600 text-white flex-shrink-0 flex items-center justify-center text-xs font-black">2</span>
+          <span><strong>엄지손가락:</strong> 엄지손가락이 가리키는 방향이 바로 코일 내부 자기장의 방향이며, 코일의 <strong>N극</strong>이 됩니다.</span>
+        </div>
+      </div>
+
+      <div class="mt-4 flex justify-end">
+        <button id="btnConfirmModal" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl shadow transition">
+          확인했습니다
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <footer class="bg-slate-200 border-t border-slate-300 py-2.5 text-center text-xs sm:text-sm text-slate-600 font-semibold">
+    천재교과서 중학교 2학년 과학 Ⅶ. 전기와 자기 - 전류가 흐르는 코일 주위의 자기장 관찰 가상실험실
+  </footer>
+
+  <script>
+    /* ========================================================
+       실험 상태 머신
+       ======================================================== */
+    const state = {
+      isPowerOn: false,       // 스위치 닫힘 여부 (false: 전류 OFF, true: 전류 ON)
+      currentDirection: 1,    // 1: 정상 (적색(+) -> 스위치 -> 코일하단 -> 앞면 위로 ↑ -> 니크롬선 -> 흑색(-))
+                              // -1: 반전 (흑색(+) -> 니크롬선 -> 코일상단 -> 앞면 아래로 ↓ -> 스위치 -> 적색(-))
+      voltage: 1.0,           // 전압 (1.0V ~ 6.0V)
+      showFieldLines: true,   // 자기력선 표시 토글
+      showCurrentVector: true,// 전류 화살표 표시 토글
+      selectedCompassId: null // 클릭된 나침반
+    };
+
+    /* ========================================================
+       교과서 259쪽 이미지와 100% 일치하는 나침반 8개 각도 정의
+       - 0도: 북쪽 (위쪽, ▲)
+       - 90도: 동쪽 (오른쪽, ▶)
+       - 180도: 남쪽 (아래쪽, ▼)
+       - 270도: 서쪽 (왼쪽, ◀)
+
+       [과정 2: 전류가 코일 앞면에서 위로(↑) 흐를 때 교과서 도판 각도]
+       ① 위쪽: 동쪽(90°)
+       ② 오른쪽 위: 남서쪽(225°)
+       ③ 오른쪽: 서쪽(270°, 코일 안쪽 통과)
+       ④ 오른쪽 아래: 북서쪽(315°)
+       ⑤ 아래쪽: 동쪽(90°)
+       ⑥ 왼쪽 아래: 남서쪽(225°)
+       ⑦ 왼쪽: 서쪽(270°, 코일 바깥으로 진출)
+       ⑧ 왼쪽 위: 북서쪽(315°)
+       ======================================================== */
+    const textbookAnglesNormal = {
+      1: 90,   // 동쪽
+      2: 225,  // 남서쪽
+      3: 270,  // 서쪽
+      4: 315,  // 북서쪽
+      5: 90,   // 동쪽
+      6: 225,  // 남서쪽
+      7: 270,  // 서쪽
+      8: 315   // 북서쪽
+    };
+
+    const compassConfigs = [
+      { id: 1, name: "① 위쪽" },
+      { id: 2, name: "② 오른쪽 위" },
+      { id: 3, name: "③ 오른쪽" },
+      { id: 4, name: "④ 오른쪽 아래" },
+      { id: 5, name: "⑤ 아래쪽" },
+      { id: 6, name: "⑥ 왼쪽 아래" },
+      { id: 7, name: "⑦ 왼쪽" },
+      { id: 8, name: "⑧ 왼쪽 위" }
+    ];
+
+    /* DOM 요소 참조 */
+    const lcdVoltText = document.getElementById("lcdVoltText");
+    const lcdAmpText = document.getElementById("lcdAmpText");
+    const powerGaugeSlider = document.getElementById("powerGaugeSlider");
+    const gaugeValueText = document.getElementById("gaugeValueText");
+    const terminalsClickG = document.getElementById("terminalsClickG");
+    const termLeftBox = document.getElementById("termLeftBox");
+    const termLeftCircle = document.getElementById("termLeftCircle");
+    const signLeft = document.getElementById("signLeft");
+    const termRightBox = document.getElementById("termRightBox");
+    const termRightCircle = document.getElementById("termRightCircle");
+    const signRight = document.getElementById("signRight");
+
+    const switchBlade = document.getElementById("switchBlade");
+    const switchClickG = document.getElementById("switchClickG");
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+
+    const btnToggleLines = document.getElementById("btnToggleLines");
+    const btnToggleCurrentVector = document.getElementById("btnToggleCurrentVector");
+    const plateFieldNormal = document.getElementById("plateFieldNormal");
+    const plateFieldReverse = document.getElementById("plateFieldReverse");
+    const coilCurrentIndicator = document.getElementById("coilCurrentIndicator");
+    const coilCurrentArrowLine = document.getElementById("coilCurrentArrowLine");
+    const coilCurrentText = document.getElementById("coilCurrentText");
+
+    const btnReset = document.getElementById("btnReset");
+    const btnRightHandHelp = document.getElementById("btnRightHandHelp");
+    const modalRightHand = document.getElementById("modalRightHand");
+    const btnCloseModal = document.getElementById("btnCloseModal");
+    const btnConfirmModal = document.getElementById("btnConfirmModal");
+
+    const compassDetailModal = document.getElementById("compassDetailModal");
+    const detailCompassName = document.getElementById("detailCompassName");
+    const detailNeedle = document.getElementById("detailNeedle");
+    const detailDesc = document.getElementById("detailDesc");
+    const btnCloseDetail = document.getElementById("btnCloseDetail");
+
+    const dashWires = [
+      document.getElementById("dashWire1"),
+      document.getElementById("dashWire2"),
+      document.getElementById("dashWire3"),
+      document.getElementById("dashWire4")
+    ];
+
+    /* ========================================================
+       나침반 각도 계산: 
+       - 스위치 열림(전류 OFF): 모두 0도 (북쪽)
+       - 활동 4 반영: 전류 세기(전압)에 따라 바늘이 움직이는 정도(편향각)가 조절됨
+         (1.0V: 약 25%만 조금 회전 -> 6.0V: 100% 교과서 목표 각도로 크게 회전)
+       ======================================================== */
+    function getCompassAngle(id) {
+      if (!state.isPowerOn) {
+        return 0; // 전류가 흐르지 않을 땐 지구 자기장 북쪽(0도)
+      }
+
+      // 목표 교과서 각도 (전류 정방향 기준)
+      let targetDeg = textbookAnglesNormal[id];
+      if (state.currentDirection === -1) {
+        // 과정 3: 전류 방향 반전 시 180도 반대 방향
+        targetDeg = (targetDeg + 180) % 360;
+      }
+
+      // 북쪽(0도) 기준으로 가장 가까운 최단 회전 경로 편향각(-180 ~ +180도) 계산
+      let deltaDeg = targetDeg;
+      if (deltaDeg > 180) {
+        deltaDeg -= 360;
+      }
+
+      // 활동 4 핵심: 전류의 세기(1.0V ~ 6.0V)에 따른 회전 정도 비율 (ratio)
+      // 1.0V 일 때는 0.28(약 28%만 살짝 움직임), 6.0V 일 때는 1.0(100% 완전 정렬)
+      const ratio = 0.28 + ((state.voltage - 1.0) / (6.0 - 1.0)) * 0.72;
+
+      // 최종 각도 (0도에서 전류 세기만큼 회전한 각도)
+      const resultAngle = (deltaDeg * ratio + 360) % 360;
+      return resultAngle;
+    }
+
+    /* ========================================================
+       시뮬레이션 그래픽 갱신
+       ======================================================== */
+    function updateSimulation() {
+      // 1. 전원장치 LCD 및 전류값 (I = V / R)
+      const currentAmp = state.isPowerOn ? (state.voltage / 4.0) : 0.0;
+      const formattedVolt = state.voltage < 10 ? "0" + state.voltage.toFixed(1) : state.voltage.toFixed(1);
+      
+      lcdVoltText.textContent = formattedVolt;
+      lcdAmpText.textContent = currentAmp.toFixed(2);
+      gaugeValueText.textContent = `${state.voltage.toFixed(1)} V`;
+      powerGaugeSlider.value = state.voltage;
+
+      // 2. 단자 극성 (+ / -) 및 코일 앞면 전류 화살표
+      if (state.currentDirection === 1) {
+        // 우측 단자가 (+), 좌측 단자가 (-)
+        signRight.textContent = "+";
+        termRightBox.setAttribute("fill", "#991b1b");
+        termRightBox.setAttribute("stroke", "#ef4444");
+        termRightCircle.setAttribute("fill", "#dc2626");
+
+        signLeft.textContent = "-";
+        termLeftBox.setAttribute("fill", "#1e293b");
+        termLeftBox.setAttribute("stroke", "#475569");
+        termLeftCircle.setAttribute("fill", "#0f172a");
+
+        coilCurrentArrowLine.setAttribute("d", "M 252 180 L 252 100");
+        coilCurrentText.textContent = "전류 ↑";
+      } else {
+        // 좌측 단자가 (+), 우측 단자가 (-)
+        signRight.textContent = "-";
+        termRightBox.setAttribute("fill", "#1e293b");
+        termRightBox.setAttribute("stroke", "#475569");
+        termRightCircle.setAttribute("fill", "#0f172a");
+
+        signLeft.textContent = "+";
+        termLeftBox.setAttribute("fill", "#991b1b");
+        termLeftBox.setAttribute("stroke", "#ef4444");
+        termLeftCircle.setAttribute("fill", "#dc2626");
+
+        coilCurrentArrowLine.setAttribute("d", "M 252 100 L 252 180");
+        coilCurrentText.textContent = "전류 ↓";
+      }
+
+      // 3. 스위치 상태 반영
+      if (state.isPowerOn) {
+        switchBlade.setAttribute("transform", "rotate(0, 51, 155)");
+
+        // 일관된 한 방향의 폐회로 전류 애니메이션
+        // wirePath 순서대로 d 경로가 +에서 -로 정확히 정의되어 있으므로 fwd / rev 가 순환 루프와 일치함
+        dashWires.forEach(wire => {
+          wire.setAttribute("opacity", "0.95");
+          wire.className.baseVal = state.currentDirection === 1 ? "wire-flow-fwd" : "wire-flow-rev";
+        });
+
+        statusDot.className = "inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
+        statusText.innerHTML = `전류 공급 중 (<span class="text-blue-600 font-black">${state.voltage.toFixed(1)}V, ${currentAmp.toFixed(2)}A</span>, 코일 앞면 ${state.currentDirection === 1 ? "↑ 위로" : "↓ 아래로"} 흐름)`;
+
+        if (state.showCurrentVector) {
+          coilCurrentIndicator.classList.remove("hidden");
+        } else {
+          coilCurrentIndicator.classList.add("hidden");
+        }
+      } else {
+        switchBlade.setAttribute("transform", "rotate(-35, 51, 155)");
+
+        dashWires.forEach(wire => {
+          wire.setAttribute("opacity", "0");
+          wire.className.baseVal = "";
+        });
+
+        statusDot.className = "inline-block w-3 h-3 rounded-full bg-slate-400";
+        statusText.textContent = "스위치가 열려 있습니다 (전류 OFF). 나침반 바늘의 N극은 모두 북쪽(▲)을 가리킵니다.";
+        coilCurrentIndicator.classList.add("hidden");
+      }
+
+      // 4. 자기력선 시각화
+      if (state.isPowerOn && state.showFieldLines) {
+        if (state.currentDirection === 1) {
+          plateFieldNormal.classList.remove("hidden");
+          plateFieldReverse.classList.add("hidden");
+        } else {
+          plateFieldNormal.classList.add("hidden");
+          plateFieldReverse.classList.remove("hidden");
+        }
+      } else {
+        plateFieldNormal.classList.add("hidden");
+        plateFieldReverse.classList.add("hidden");
+      }
+
+      // 5. 나침반 8개 바늘 회전 (스위치 OFF 시 북쪽 0도, ON 시 교과서 그림 각도)
+      compassConfigs.forEach(c => {
+        const needleEl = document.getElementById(`needle-${c.id}`);
+        const rotDeg = getCompassAngle(c.id);
+        if (needleEl) {
+          needleEl.style.transform = `rotate(${rotDeg}deg)`;
+        }
+
+        if (state.selectedCompassId === c.id) {
+          updateDetailModal(c, rotDeg);
+        }
+      });
+    }
+
+    /* 돋보기 모달 갱신 */
+    function updateDetailModal(config, deg) {
+      detailCompassName.textContent = `${config.name} 나침반`;
+      detailNeedle.style.transform = `rotate(${deg}deg)`;
+      const normalizedDeg = ((Math.round(deg) % 360) + 360) % 360;
+      let dirName = "북";
+      if (normalizedDeg >= 23 && normalizedDeg < 68) dirName = "북동";
+      else if (normalizedDeg >= 68 && normalizedDeg <= 112) dirName = "동";
+      else if (normalizedDeg > 112 && normalizedDeg < 158) dirName = "남동";
+      else if (normalizedDeg >= 158 && normalizedDeg <= 202) dirName = "남";
+      else if (normalizedDeg > 202 && normalizedDeg < 248) dirName = "남서";
+      else if (normalizedDeg >= 248 && normalizedDeg <= 292) dirName = "서";
+      else if (normalizedDeg > 292 && normalizedDeg < 338) dirName = "북서";
+
+      detailDesc.innerHTML = `N극 방향: <strong>${dirName}쪽 (${normalizedDeg}°)</strong>`;
+      compassDetailModal.classList.remove("hidden");
+    }
+
+    /* ========================================================
+       인터랙티브 이벤트 바인딩
+       ======================================================== */
+    // 1. 스위치 토글 (실제 나이프 스위치 클릭/터치)
+    function toggleSwitch() {
+      state.isPowerOn = !state.isPowerOn;
+      updateSimulation();
+    }
+    switchClickG.addEventListener("click", toggleSwitch);
+
+    // 2. 전류 방향 변경 (전원장치 단자 직접 터치)
+    function togglePolarity() {
+      state.currentDirection *= -1;
+      updateSimulation();
+    }
+    terminalsClickG.addEventListener("click", togglePolarity);
+
+    // 3. 전류 세기 조절 (전원장치 본체 내장 게이지 슬라이더 드래그 조절)
+    powerGaugeSlider.addEventListener("input", (e) => {
+      state.voltage = parseFloat(e.target.value);
+      updateSimulation();
+    });
+
+    // 4. 자기력선 토글
+    btnToggleLines.addEventListener("click", () => {
+      state.showFieldLines = !state.showFieldLines;
+      if (state.showFieldLines) {
+        btnToggleLines.innerHTML = '<i class="fa-solid fa-circle-nodes"></i> 자기력선 (ON)';
+        btnToggleLines.className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100 transition flex items-center gap-1.5 shadow-sm";
+      } else {
+        btnToggleLines.innerHTML = '<i class="fa-solid fa-circle-nodes"></i> 자기력선 (OFF)';
+        btnToggleLines.className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-300 bg-slate-50 text-slate-500 hover:bg-slate-100 transition flex items-center gap-1.5 shadow-sm";
+      }
+      updateSimulation();
+    });
+
+    // 5. 전류 화살표 토글
+    btnToggleCurrentVector.addEventListener("click", () => {
+      state.showCurrentVector = !state.showCurrentVector;
+      if (state.showCurrentVector) {
+        btnToggleCurrentVector.innerHTML = '<i class="fa-solid fa-arrow-up-long"></i> 전류 방향 화살표 (ON)';
+        btnToggleCurrentVector.className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-rose-500 bg-rose-50 text-rose-700 hover:bg-rose-100 transition flex items-center gap-1.5 shadow-sm";
+      } else {
+        btnToggleCurrentVector.innerHTML = '<i class="fa-solid fa-arrow-up-long"></i> 전류 방향 화살표 (OFF)';
+        btnToggleCurrentVector.className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-300 bg-slate-50 text-slate-500 hover:bg-slate-100 transition flex items-center gap-1.5 shadow-sm";
+      }
+      updateSimulation();
+    });
+
+    // 6. 나침반 클릭 시 확대경 팝업
+    document.querySelectorAll(".compass-item").forEach(item => {
+      item.addEventListener("click", () => {
+        const id = parseInt(item.getAttribute("data-id"));
+        state.selectedCompassId = id;
+        const config = compassConfigs.find(c => c.id === id);
+        const rotDeg = getCompassAngle(id);
+        updateDetailModal(config, rotDeg);
+      });
+    });
+
+    btnCloseDetail.addEventListener("click", () => {
+      compassDetailModal.classList.add("hidden");
+      state.selectedCompassId = null;
+    });
+
+    // 7. 전체 리셋
+    btnReset.addEventListener("click", () => {
+      state.isPowerOn = false;
+      state.currentDirection = 1;
+      state.voltage = 1.0;
+      powerGaugeSlider.value = 1.0;
+      state.showFieldLines = true;
+      state.showCurrentVector = true;
+      state.selectedCompassId = null;
+      compassDetailModal.classList.add("hidden");
+      btnToggleLines.innerHTML = '<i class="fa-solid fa-circle-nodes"></i> 자기력선 (ON)';
+      btnToggleLines.className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100 transition flex items-center gap-1.5 shadow-sm";
+      btnToggleCurrentVector.innerHTML = '<i class="fa-solid fa-arrow-up-long"></i> 전류 방향 화살표 (ON)';
+      btnToggleCurrentVector.className = "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-rose-500 bg-rose-50 text-rose-700 hover:bg-rose-100 transition flex items-center gap-1.5 shadow-sm";
+      updateSimulation();
+    });
+
+    // 8. 오른손 법칙 모달
+    btnRightHandHelp.addEventListener("click", () => modalRightHand.classList.remove("hidden"));
+    btnCloseModal.addEventListener("click", () => modalRightHand.classList.add("hidden"));
+    btnConfirmModal.addEventListener("click", () => modalRightHand.classList.add("hidden"));
+
+    // 초기 실행
+    window.onload = function() {
+      updateSimulation();
+    };
+  </script>
+</body>
+</html>
